@@ -20,8 +20,7 @@ plastics <- tuesdata$plastics
 # EU COUNTRIES
 
 EU_countries <- c("Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark","Estonia","Finland",
-"France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Luxembourg", "Lithuania", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovak Republic", "Slovenia", "Spain", "Sweden")
-
+"France", "Germany", "Greece", "Hungary", "Ireland", "Italy", "Latvia", "Luxembourg", "Lithuania", "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovak Republic", "Slovenia", "Spain", "Sweden", "United Kingdom of Great Britain & Northern Ireland")
 
 # DATA
 
@@ -35,18 +34,27 @@ EU_totals <- EU_plastics %>%
   summarize(total = sum(grand_total))
 
 EU_totals_per_event <- EU_totals %>%
-  mutate(total_per_event = round(total / num_events, 0), total_per_volunteer = round(total / volunteers, 0))
+  mutate(total_per_event = round(total / num_events, 0), pieces_per_volunteer = round(total / volunteers, 0))
 
 EU_all <- left_join(EU_totals, EU_totals_per_event, by = "country") %>%
-  select(country, total.x, num_events.x, total_per_event, total_per_volunteer) %>%
-  rename(num_events = num_events.x, total = total.x)
+  select(country, total.x, num_events.x, total_per_event, pieces_per_volunteer) %>%
+  rename(num_events = num_events.x, total = total.x) 
 
+# CHANGE NAME OF UK FOR MAP MATCHING PURPOSES
+
+EU_all$country[EU_all$country == "United Kingdom of Great Britain & Northern Ireland"] <- "United Kingdom"
 
 # MAPPING GROUNDWORK
 
 worldMap <- getMap()
+Europe <-  c("Austria","Belgium","Bulgaria","Croatia","Cyprus",
+                   "Czech Rep.","Denmark","Estonia","Finland","France",
+                   "Germany","Greece","Hungary","Ireland","Italy","Latvia",
+                   "Lithuania","Luxembourg","Malta","Netherlands","Poland",
+                   "Portugal","Romania","Slovakia","Slovenia","Spain",
+                   "Sweden","United Kingdom")
 
-inEU <- which(worldMap$NAME %in% EU_countries)
+inEU <- which(worldMap$NAME %in% Europe)
 
 europeCoords <- lapply(inEU, function(i){
   df <- data.frame(worldMap@polygons[[i]]@Polygons[[1]]@coords)
@@ -58,7 +66,7 @@ europeCoords <- lapply(inEU, function(i){
 europeCoords <- do.call("rbind", europeCoords)
 
 europeCoords$total <- EU_all$total[match(europeCoords$region, EU_all$country)]
-europeCoords$total_per_event <- EU_all$total_per_event[match(europeCoords$region, EU_all$country)]
+europeCoords$pieces_per_volunteer <- EU_all$pieces_per_volunteer[match(europeCoords$region, EU_all$country)]
 europeCoords$num_events <- EU_all$num_events[match(europeCoords$region, EU_all$country)]
 
 
@@ -68,7 +76,7 @@ map_total <- ggplot() + geom_polygon(data = europeCoords, aes(x = long, y = lat,
                              colour = "black", size = 0.1) +
   coord_map(xlim = c(-13, 35),  ylim = c(32, 71))
 
-map_total <- map_total + scale_fill_gradient(name = "Pieces", low = "#add8e6", high = "#1e4155", na.value = "#FFFFFF")
+map_total <- map_total + scale_fill_gradient(name = "", low = "#add8e6", high = "#1e4155", na.value = "#FFFFFF")
 
 
 map_total <- map_total + theme(
@@ -88,7 +96,7 @@ map_num_events <- ggplot() + geom_polygon(data = europeCoords, aes(x = long, y =
                              colour = "black", size = 0.1) +
   coord_map(xlim = c(-13, 35),  ylim = c(32, 71))
 
-map_num_events <- map_num_events + scale_fill_gradient(name = "Events", low = "#add8e6", high = "#1e4155", na.value = "#FFFFFF")
+map_num_events <- map_num_events + scale_fill_gradient(name = "", low = "#add8e6", high = "#1e4155", na.value = "#FFFFFF")
 
 
 map_num_events <- map_num_events + theme(
@@ -102,24 +110,24 @@ map_num_events
 ggsave("num events.jpg")
 
 
-# MAP PIECES PER EVENT
+# MAP PIECES PER VOLUNTEER
 
-map_total_per_event <- ggplot() + geom_polygon(data = europeCoords, aes(x = long, y = lat, group = region, fill = total_per_event),
+map_pieces_per_volunteer <- ggplot() + geom_polygon(data = europeCoords, aes(x = long, y = lat, group = region, fill = pieces_per_volunteer),
                              colour = "black", size = 0.1) +
   coord_map(xlim = c(-13, 35),  ylim = c(32, 71))
 
-map_total_per_event <- map_total_per_event + scale_fill_gradient(name = "Pieces per event", low = "#add8e6", high = "#1e4155", na.value = "#FFFFFF")
+map_pieces_per_volunteer <- map_pieces_per_volunteer + scale_fill_gradient(name = "", low = "#add8e6", high = "#1e4155", na.value = "#FFFFFF")
 
 
-map_total_per_event <- map_total_per_event + theme(
+map_pieces_per_volunteer <- map_pieces_per_volunteer + theme(
                axis.text.x = element_blank(),
                axis.text.y = element_blank(), axis.ticks.x = element_blank(),
                axis.ticks.y = element_blank(), axis.title = element_blank(),
                plot.margin = unit(0 * c(-1.5, -1.5, -1.5, -1.5), "lines")) + 
-  ggtitle("Collected pieces per event")
+  ggtitle("Collected pieces per volunteer")
 
-map_total_per_event
-ggsave("pieces per event.png")
+map_pieces_per_volunteer
+ggsave("pieces per volunteer.png")
 
 
 ```
