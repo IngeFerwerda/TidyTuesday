@@ -1,0 +1,51 @@
+library(tidyverse)
+library(ggdark)
+library(extrafont)
+
+#font_import()
+#loadfonts(device = "win")
+#options(scipen=10000)
+
+#Load data
+games <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-16/games.csv')
+
+#Transform data
+games2020 <- games %>%
+  filter(year == 2020) 
+
+most_popular <- games2020 %>%
+  group_by(gamename) %>%
+  summarize(monthly_avg = sum(avg)/12) %>%
+  arrange(desc(monthly_avg)) %>%
+  top_n(5)
+
+popular2020 <- games2020 %>%
+  filter(gamename %in% most_popular$gamename) %>%
+  mutate(month = fct_relevel(as.factor(month), "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")) 
+
+#Plot
+ggplot(popular2020, aes(x = month, y = avg, group = gamename, color = gamename)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Top 5 games in 2020",
+        subtitle = "With the highest monthly average number of players at the same time",
+        x = NULL,
+        y = "Average n of players at the same time",
+        color = "Game name",
+        caption = "Data: TidyTuesday") + 
+  dark_theme_gray(base_family = "Arimo") +
+  theme(plot.title = element_text(family = "Impact", size = 14, color = "grey50"),
+        axis.text.x = element_text(angle = 50, hjust = 1),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        legend.title = element_text(family = "Impact", color = "grey50", size = 12),
+        legend.key = element_blank(),
+        plot.caption.position = "plot",
+        axis.title.y = element_text(vjust = 2),
+        axis.ticks = element_blank()) +
+  scale_colour_brewer(palette = "Dark2")
+
+ggsave("Week 16.png")
